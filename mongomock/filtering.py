@@ -258,15 +258,21 @@ def _in_op(doc_val, search_val):
 
 
 def _geo_within_op(doc_val, search_val):
+    search_geom = search_val.get('$geometry')
+    if search_geom is None:
+        raise OperationFailure('$geoWithin argument should contain $geometry key with GeoJSON value.')
     try:
-        return shape(search_val).contains(shape(doc_val))
+        return shape(search_geom).contains(shape(doc_val))
     except ValueError as e:
         raise OperationFailure('$geoWithin error: {}'.format(str(e)))
 
 
 def _geo_intersects_op(doc_val, search_val):
+    search_geom = search_val.get('$geometry')
+    if search_geom is None:
+        raise OperationFailure('$geoIntersects argument should contain $geometry key with GeoJSON value.')
     try:
-        return shape(search_val).intersects(shape(doc_val))
+        return shape(search_geom).intersects(shape(doc_val))
     except ValueError as e:
         raise OperationFailure('$geoIntersects error: {}'.format(str(e)))
 
