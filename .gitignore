@@ -3,6 +3,7 @@ ChangeLog
 
 #### Python
 *.py[co]
+env
 
 # Packages
 *.egg

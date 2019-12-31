@@ -8,6 +8,7 @@ import numbers
 import operator
 import re
 from sentinels import NOTHING
+from shapely.geometry import shape
 from six import iteritems, iterkeys, string_types, PY3
 try:
     from types import NoneType
@@ -28,8 +29,6 @@ _NOT_IMPLEMENTED_OPERATORS = {
     '$bitsAllSet',
     '$bitsAnyClear',
     '$bitsAnySet',
-    '$geoIntersects',
-    '$geoWithin',
     '$maxDistance',
     '$minDistance',
     '$near',
@@ -60,7 +59,9 @@ class _Filterer(object):
             '$regex': _not_nothing_and(_regex),
             '$elemMatch': self._elem_match_op,
             '$size': _size_op,
-            '$type': _type_op
+            '$type': _type_op,
+            '$geoWithin': _geo_within_op,
+            '$geoIntersects': _geo_intersects_op,
         }, **{
             key: _not_nothing_and(_list_expand(_compare_objects(op)))
             for key, op in iteritems(SORTING_OPERATOR_MAP)
@@ -254,6 +255,20 @@ def _in_op(doc_val, search_val):
         if (is_regex and _regex(doc_val, x)) or (x in doc_val):
             return True
     return False
+
+
+def _geo_within_op(doc_val, search_val):
+    try:
+        return shape(search_val).contains(shape(doc_val))
+    except ValueError as e:
+        raise OperationFailure('$geoWithin error: {}'.format(str(e)))
+
+
+def _geo_intersects_op(doc_val, search_val):
+    try:
+        return shape(search_val).intersects(shape(doc_val))
+    except ValueError as e:
+        raise OperationFailure('$geoIntersects error: {}'.format(str(e)))
 
 
 def _not_nothing_and(f):
